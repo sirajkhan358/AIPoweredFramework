@@ -1,0 +1,1 @@
+[{"name":"Assertion failures","messageRegex":"Expected|expect","matchedStatuses":["failed"]},{"name":"Browser and timeout errors","messageRegex":"Timeout|net::|Error","matchedStatuses":["broken"]}]

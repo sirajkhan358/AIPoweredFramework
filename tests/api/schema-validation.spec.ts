@@ -2,11 +2,13 @@ import { expect, test } from '@playwright/test';
 import dotenv from 'dotenv';
 import Ajv from 'ajv';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import { Routes } from '../../api/endpoints/routes';
 import { DataProvider } from '../../utils/DataReader';
 
 dotenv.config();
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ajv = new Ajv();
 const productSchema = DataProvider.readJson(
   path.resolve(__dirname, '../../api/schemas/product_api_schema.json'),

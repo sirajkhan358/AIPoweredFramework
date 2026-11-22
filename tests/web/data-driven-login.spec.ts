@@ -1,6 +1,9 @@
 import path from 'path';
+import { fileURLToPath } from 'url';
 import { test, expect } from '../../fixtures/pageFixtures';
 import { DataProvider } from '../../utils/DataReader';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 type LoginData = {
   testName: string;

@@ -3,12 +3,20 @@ pipeline {
 
   parameters {
     choice(
-      name: 'TEST_SUITE',
-      choices: ['all', 'web', 'api', 'sanity', 'regression', 'e2e', 'datadriven'],
-      description: 'Select which Playwright suite to run'
+      name: 'tags',
+      choices: [
+        '@master',
+        '@sanity',
+        '@regression',
+        '@end-to-end',
+        '@api',
+        '@web',
+        '@datadriven'
+      ],
+      description: 'Select the Playwright tag to run'
     )
     choice(
-      name: 'BROWSER',
+      name: 'browser',
       choices: ['chromium', 'firefox', 'webkit'],
       description: 'Select which browser to run the tests in'
     )
@@ -37,48 +45,35 @@ pipeline {
 
     stage('Install selected browser') {
       steps {
-        bat "npx playwright install ${params.BROWSER}"
+        bat "npx playwright install ${params.browser}"
       }
     }
 
     stage('Run Playwright tests') {
       steps {
         script {
-          def suiteFilter
-          switch (params.TEST_SUITE) {
-            case 'all':
-              suiteFilter = '@master'
-              env.ALLURE_RESULTS_DIR = 'allure-results'
-              break
-            case 'web':
-              suiteFilter = '@web'
+          switch (params.tags) {
+            case '@web':
               env.ALLURE_RESULTS_DIR = 'allure-results/ui'
               break
-            case 'api':
-              suiteFilter = '@api'
+            case '@api':
               env.ALLURE_RESULTS_DIR = 'allure-results/api'
               break
-            case 'sanity':
-              suiteFilter = '@sanity'
-              env.ALLURE_RESULTS_DIR = 'allure-results'
-              break
-            case 'regression':
-              suiteFilter = '@regression'
-              env.ALLURE_RESULTS_DIR = 'allure-results'
-              break
-            case 'e2e':
-              suiteFilter = '@end-to-end'
+            case '@end-to-end':
+            case '@datadriven':
               env.ALLURE_RESULTS_DIR = 'allure-results/ui'
               break
-            case 'datadriven':
-              suiteFilter = '@datadriven'
-              env.ALLURE_RESULTS_DIR = 'allure-results/ui'
+            case '@master':
+            case '@sanity':
+            case '@regression':
+              env.ALLURE_RESULTS_DIR = 'allure-results'
               break
             default:
-              error "Unsupported test suite: ${params.TEST_SUITE}"
+              error "Unsupported tag: ${params.tags}"
           }
 
-          bat "npx playwright test --grep \"${suiteFilter}\" --project=${params.BROWSER}"
+          env.BROWSER = params.browser
+          bat "npx playwright test --grep \"${params.tags}\" --project=${params.browser}"
         }
       }
     }

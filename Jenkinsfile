@@ -1,6 +1,10 @@
 pipeline {
   agent any
 
+  tools {
+    nodejs 'NodeJS 22'
+  }
+
   parameters {
     choice(
       name: 'tags',
@@ -39,6 +43,8 @@ pipeline {
 
     stage('Install dependencies') {
       steps {
+        bat 'node --version'
+        bat 'npm --version'
         bat 'npm ci'
       }
     }

@@ -22,7 +22,7 @@ reporter: [
     WebApplication: process.env.WEB_APP_URL || "Not configured",
     API: process.env.API_BASE_URL || "Not configured",
     Environment: process.env.APP_ENV || "Not configured",
-    Browser: "Chromium (web tests)",
+    Browser: process.env.BROWSER || "Chromium",
     Framework: "Playwright + TypeScript",
   },
   globalLabels: {
@@ -58,15 +58,13 @@ projects: [
 name: "chromium",
 use: { ...devices["Desktop Chrome"] },
 },
-/*
 {
-name: 'firefox',
-use: { ...devices['Desktop Firefox'] },
+name: "firefox",
+use: { ...devices["Desktop Firefox"] },
 },
 {
-name: 'webkit',
-use: { ...devices['Desktop Safari'] },
-}
-*/
+name: "webkit",
+use: { ...devices["Desktop Safari"] },
+},
 ],
 });

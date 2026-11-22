@@ -84,15 +84,27 @@ pipeline {
     }
 
     stage('Archive reports and results') {
-      when {
-        always()
-      }
       steps {
         archiveArtifacts(
           artifacts: 'playwright-report/**,allure-results/**,test-results/**',
           allowEmptyArchive: true
         )
       }
+    }
+  }
+
+  post {
+    failure {
+      archiveArtifacts(
+        artifacts: 'playwright-report/**,allure-results/**,test-results/**',
+        allowEmptyArchive: true
+      )
+    }
+    aborted {
+      archiveArtifacts(
+        artifacts: 'playwright-report/**,allure-results/**,test-results/**',
+        allowEmptyArchive: true
+      )
     }
   }
 }

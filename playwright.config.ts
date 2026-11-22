@@ -13,6 +13,7 @@ retries: process.env.CI ? 2 : 0,
 workers: process.env.CI ? 6 : undefined,
 reporter: [
 ["list"], // Detailed console output
+["html", { outputFolder: "playwright-report", open: "never" }],
 ["./utils/CustomReporter.ts", {
   resultsDir: process.env.ALLURE_RESULTS_DIR || "allure-results",
   detail: true,
@@ -46,7 +47,7 @@ use: {
 trace: "on-first-retry",
 screenshot: "on",
 video: "retain-on-failure",
-headless: false,
+headless: !!process.env.CI,
 viewport: { width: 1280, height: 720 }, // Set default viewport size for consistency
 ignoreHTTPSErrors: true, // Ignore SSL errors if necessary
 permissions: ["geolocation"], // Set necessary permissions for geolocation-based tests

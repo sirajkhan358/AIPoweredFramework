@@ -1,8 +1,5 @@
-#To run manually: go to your repo → Actions → Playwright Tests → Run workflow → choose 
-your parameters → Run.
-name: 
+name: Playwright Tests
 
- Playwright Tests
 on:
   push:
     branches: [master]
@@ -11,7 +8,8 @@ on:
   workflow_dispatch:
     inputs:
       test_suite:
-        description: "Select test suite"
+        description: Select test suite
+        required: true
         type: choice
         options:
           - test:master
@@ -21,80 +19,107 @@ on:
           - test:api
           - test:web
           - test:datadriven
-        default: "test:e2e"
+        default: test:e2e
       browser:
-        description: "Select browser"
+        description: Select browser
+        required: true
         type: choice
         options:
           - chromium
-          - firefox
-          - webkit
-        default: "chromium"
+        default: chromium
       mode:
-        description: "Run mode"
+        description: Run mode
+        required: true
         type: choice
         options:
           - headless
           - headed
-        default: "headless"
+        default: headless
+
+permissions:
+  contents: read
+
 jobs:
   test:
     timeout-minutes: 60
     runs-on: windows-latest
+    env:
+      CI: "1"
+      WEB_APP_URL: https://tutorialsninja.com/demo/
+      API_BASE_URL: https://fakestoreapi.com
+      APP_ENV: github-actions
     steps:
-      - name: 
-
- Checkout Repository
+      - name: Checkout repository
         uses: actions/checkout@v4
-      - name:  Set up Node.js
+
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: lts/*
-      - name: 
+          cache: npm
 
- Install Dependencies
+      - name: Install dependencies
         run: npm ci
-      - name: 
 
- Install Playwright Browsers
-        run: npx playwright install --with-deps
-      - name: 
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium
 
- Run Playwright Tests
-        run: |
-          $suite = "${{ github.event.inputs.test_suite || 'test:e2e' }}"
-          $browser = "${{ github.event.inputs.browser || 'chromium' }}"
-          $mode = "${{ github.event.inputs.mode || 'headless' }}"
-          $tag = $suite -replace 'test:', ''
-          $browserFlag = "--project=$browser"
-          $modeFlag = if ($mode -eq 'headed') { '--headed' } else { '' }
-          npx playwright test --grep "@$tag" $browserFlag $modeFlag --reporter=dot --
-output=test-results
+      - name: Run Playwright tests
+        shell: pwsh
         env:
-          CI: "1"
-      - name: 
+          TEST_SUITE: ${{ github.event.inputs.test_suite || 'test:e2e' }}
+          BROWSER: ${{ github.event.inputs.browser || 'chromium' }}
+          MODE: ${{ github.event.inputs.mode || 'headless' }}
+        run: |
+          $suitePatterns = @{
+            'test:master' = '@master'
+            'test:sanity' = '@sanity'
+            'test:regression' = '@regression'
+            'test:e2e' = '@end-to-end'
+            'test:api' = '@api'
+            'test:web' = '@web'
+            'test:datadriven' = '@datadriven'
+          }
 
- Upload Playwright HTML Report
+          if (-not $suitePatterns.ContainsKey($env:TEST_SUITE)) {
+            throw "Unsupported test suite: $env:TEST_SUITE"
+          }
+
+          $env:ALLURE_RESULTS_DIR = switch ($env:TEST_SUITE) {
+            'test:web' { 'allure-results/ui' }
+            'test:api' { 'allure-results/api' }
+            'test:e2e' { 'allure-results/ui' }
+            'test:datadriven' { 'allure-results/ui' }
+            default { 'allure-results' }
+          }
+
+          $playwrightArgs = @(
+            '--grep', $suitePatterns[$env:TEST_SUITE],
+            "--project=$env:BROWSER",
+            '--output=test-results'
+          )
+
+          if ($env:MODE -eq 'headed') {
+            $playwrightArgs += '--headed'
+          }
+
+          npx playwright test @playwrightArgs
+          exit $LASTEXITCODE
+
+      - name: Upload Playwright HTML report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
-          path: reports/
+          path: playwright-report/
+          if-no-files-found: ignore
           retention-days: 30
-- name: 
 
- Upload Custom Report
-if: always()
-uses: actions/upload-artifact@v4
-with:
-name: custom-report
-path: custom-report/
-retention-days: 30- name: 
-
- Upload Allure Results
-if: always()
-uses: actions/upload-artifact@v4
-with:
-name: allure-results
-path: allure-results/
-retention-days: 30
+      - name: Upload Allure results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results
+          path: allure-results/
+          if-no-files-found: ignore
+          retention-days: 30
